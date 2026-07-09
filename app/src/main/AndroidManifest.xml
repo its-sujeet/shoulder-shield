@@ -16,7 +16,7 @@
         android:name=".PrivacyGuardApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Privacy Guard"
+        android:label="Shoulder Shield"
         android:supportsRtl="true"
         android:theme="@style/Theme.PrivacyGuard">
 
@@ -31,11 +31,26 @@
         </activity>
 
         <activity
+            android:name=".SetupWizardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PrivacyGuard" />
+
+        <activity
             android:name=".system.PermissionActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:theme="@style/Theme.PrivacyGuard.Fullscreen" />
+
+        <activity
+            android:name=".ui.IntrusionLogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PrivacyGuard" />
+
+        <service
+            android:name=".service.ShoulderShieldService"
+            android:foregroundServiceType="camera"
+            android:exported="false" />
 
         <service
             android:name=".service.PrivacyGuardService"

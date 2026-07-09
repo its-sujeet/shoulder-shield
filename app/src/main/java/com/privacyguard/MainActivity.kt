@@ -13,7 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.privacyguard.service.PrivacyGuardService
+import com.privacyguard.service.ShoulderShieldService
 import com.privacyguard.system.PermissionManager
 import com.privacyguard.system.ScreenLocker
 import com.privacyguard.utils.Constants
@@ -34,6 +34,17 @@ class MainActivity : AppCompatActivity() {
         permissionManager = PermissionManager(this)
         preferencesManager = PreferencesManager(this)
 
+        // Check if setup wizard has been completed
+        lifecycleScope.launch {
+            if (!preferencesManager.isSetupCompleted.first()) {
+                startActivity(Intent(this@MainActivity, SetupWizardActivity::class.java))
+                finish()
+                return@launch
+            }
+            isMonitoring = preferencesManager.isMonitoring.first()
+            updateUI()
+        }
+
         findViewById<android.widget.Button>(R.id.btn_toggle).setOnClickListener {
             if (isMonitoring) {
                 stopMonitoring()
@@ -44,6 +55,10 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<android.widget.Button>(R.id.btn_settings).setOnClickListener {
             showSettingsDialog()
+        }
+
+        findViewById<android.widget.Button>(R.id.btn_intrusion_log)?.setOnClickListener {
+            startActivity(Intent(this, com.privacyguard.ui.IntrusionLogActivity::class.java))
         }
 
         // Check permissions on start
@@ -120,11 +135,26 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Start the foreground service
-        val intent = Intent(this, PrivacyGuardService::class.java).apply {
-            action = PrivacyGuardService.ACTION_START
+        // Face enrollment — first time setup
+        lifecycleScope.launch {
+            val enrolled = preferencesManager.loadOwnerEmbedding() != null
+            if (!enrolled) {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Face Enrollment")
+                    .setMessage("Look at the front camera for 2 seconds so I can learn your face.\n\nAfter that, only YOUR face keeps the screen visible — strangers trigger the shield.")
+                    .setPositiveButton("Start Enrollment") { _, _ ->
+                        startServiceInternal()
+                    }
+                    .setNegativeButton("Skip (no face rec)", null)
+                    .show()
+            } else {
+                startServiceInternal()
+            }
         }
-        ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun startServiceInternal() {
+        ShoulderShieldService.start(this)
         isMonitoring = true
         updateUI()
 
@@ -142,10 +172,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopMonitoring() {
-        val intent = Intent(this, PrivacyGuardService::class.java).apply {
-            action = PrivacyGuardService.ACTION_STOP
-        }
-        startService(intent)
+        ShoulderShieldService.stop(this)
         isMonitoring = false
         updateUI()
     }

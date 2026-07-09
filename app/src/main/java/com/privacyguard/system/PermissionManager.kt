@@ -12,10 +12,8 @@ import androidx.core.content.ContextCompat
 
 class PermissionManager(private val context: Context) {
 
-    fun hasCameraPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED
-    }
+    fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 
     fun hasOverlayPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -23,12 +21,9 @@ class PermissionManager(private val context: Context) {
         } else true
     }
 
-    fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                    == PackageManager.PERMISSION_GRANTED
-        } else true
-    }
+    fun hasNotificationPermission(): Boolean = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    else true
 
     fun isBatteryOptimizationExempt(): Boolean {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager

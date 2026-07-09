@@ -31,6 +31,8 @@ object Constants {
     const val PREF_ENROLLMENT_DATA = "enrollment_data"
     const val PREF_IS_ENROLLED = "is_enrolled"
     const val PREF_IS_ROOTED = "is_rooted"
+    const val PREF_OWNER_EMBEDDING = "owner_embedding"
+    const val PREF_SETUP_COMPLETED = "setup_completed"
 
     // Service actions
     const val ACTION_START = "com.privacyguard.START"

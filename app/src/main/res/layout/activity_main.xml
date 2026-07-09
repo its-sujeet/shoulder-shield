@@ -15,7 +15,7 @@
         <ImageView
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:src="@android:drawable/ic_menu_lock"
+            android:src="@drawable/ic_lock"
             android:layout_marginBottom="24dp"
             android:alpha="0.8" />
 
@@ -57,6 +57,15 @@
             android:textColor="#FF8899AA"
             android:background="@null"
             android:layout_marginTop="16dp" />
+
+        <Button
+            android:id="@+id/btn_intrusion_log"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Intrusion Log"
+            android:textColor="#FF8899AA"
+            android:background="@null"
+            android:layout_marginTop="8dp" />
 
     </LinearLayout>
 

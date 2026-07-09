@@ -41,6 +41,9 @@ class PrivacyGuardService : LifecycleService() {
     private var lastState: PrivacyState = PrivacyState.Normal
 
     private var isScreenOn = true
+    private var enrollmentCompleted = false
+    /** Enroll owner during first run. Set to true once running normally. */
+    private var monitoringStarted = false
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -75,35 +78,54 @@ class PrivacyGuardService : LifecycleService() {
             onFrame = { imageProxy ->
                 faceDetectorManager.processFrame(
                     imageProxy = imageProxy,
-                    onResult = { faces ->
+                    onResult = { recognizedFaces ->
                         val now = System.currentTimeMillis()
                         val result = faceAnalyzer.analyze(
-                            faces = faces,
+                            faces = recognizedFaces.map { it.face },
                             frameWidth = Constants.CAMERA_RESOLUTION_WIDTH,
                             frameHeight = Constants.CAMERA_RESOLUTION_HEIGHT,
                             timestampMs = now
                         )
                         val validFaces = faceAnalyzer.filterValidFaces(result)
-                        val primaryFace = faceAnalyzer.findPrimaryFace(validFaces)
 
-                        // FPS throttle: higher when >1 face
-                        cameraController.setSuspiciousMode(validFaces.size > 1)
-
-                        // Owner detection placeholder: single face = owner
-                        val isOwner = validFaces.size == 1
-
-                        val newState = decisionEngine.process(
-                            faceCount = validFaces.size,
-                            isOwner = isOwner,
-                            nowMs = now
-                        )
-
-                        if (newState != lastState) {
-                            lastState = newState
-                            broadcastState(newState, validFaces.size, isOwner)
+                        // ─── Enrollment phase ───
+                        if (!enrollmentCompleted && monitoringStarted) {
+                            if (validFaces.isNotEmpty()) {
+                                val rawFaces = recognizedFaces.map { it.face }
+                                faceDetectorManager.enrollFrame(rawFaces) { progress ->
+                                    val pct = (progress * 100).toInt()
+                                    updateEnrollmentProgress(pct)
+                                    if (progress >= 1f && !enrollmentCompleted) {
+                                        enrollmentCompleted = true
+                                        val emb = faceDetectorManager.ownerEmbedding
+                                        if (emb != null) {
+                                            serviceScope.launch {
+                                                preferencesManager.saveOwnerEmbedding(emb)
+                                            }
+                                        }
+                                        // Switch to normal notification
+                                        updateNotification(PrivacyState.Normal)
+                                    }
+                                }
+                            }
+                        } else if (enrollmentCompleted && monitoringStarted) {
+                            // ─── Normal monitoring ───
+                            val ownerCount = recognizedFaces.count { it.isOwner }
+                            val strangerCount = recognizedFaces.count { !it.isOwner && it.similarity > 0.3f }
+                            cameraController.setSuspiciousMode(validFaces.size > 1 || strangerCount > 0)
+                            val isOwner = ownerCount > 0
+                            val effectiveFaceCount = if (isOwner) 1 else validFaces.size
+                            val newState = decisionEngine.process(
+                                faceCount = effectiveFaceCount,
+                                isOwner = isOwner,
+                                nowMs = now
+                            )
+                            if (newState != lastState) {
+                                lastState = newState
+                                broadcastState(newState, validFaces.size, isOwner)
+                            }
+                            handleStateOnMainThread(newState, now)
                         }
-
-                        handleStateOnMainThread(newState, now)
                     },
                     onError = { /* log */ }
                 )
@@ -149,13 +171,29 @@ class PrivacyGuardService : LifecycleService() {
                     return START_NOT_STICKY
                 }
                 startForeground(NOTIFICATION_ID, buildNotification())
+                // Set monitoring + enrollment flags immediately (not in coroutine)
+                monitoringStarted = true
                 serviceScope.launch {
                     preferencesManager.setMonitoring(true)
                     val timeoutMs = preferencesManager.getAwayTimeoutMs()
-                    // Split user timeout into grace (80%) and warning (20%)
                     val graceMs = (timeoutMs * 0.8).toLong()
                     val warningMs = timeoutMs - graceMs
                     decisionEngine.setDynamicTimeout(graceMs, warningMs)
+
+                    // Load saved owner embedding
+                    val saved = preferencesManager.loadOwnerEmbedding()
+                    if (saved != null) {
+                        faceDetectorManager.ownerEmbedding = saved
+                        enrollmentCompleted = true
+                    }
+                    // If no saved embedding, enrollment starts on next frame
+                }
+                // Show enrollment prompt if first time
+                serviceScope.launch {
+                    delay(200)
+                    if (!enrollmentCompleted) {
+                        updateEnrollmentNotification()
+                    }
                 }
                 cameraController.start()
             }
@@ -207,7 +245,7 @@ class PrivacyGuardService : LifecycleService() {
         return NotificationCompat.Builder(this, PrivacyGuardApp.NOTIFICATION_CHANNEL_ID)
             .setContentTitle("Privacy Guard Active")
             .setContentText("Monitoring for shoulder surfers")
-            .setSmallIcon(android.R.drawable.ic_menu_lock)
+            .setSmallIcon(com.privacyguard.R.drawable.ic_lock)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSilent(true)
@@ -228,7 +266,37 @@ class PrivacyGuardService : LifecycleService() {
         val notification = NotificationCompat.Builder(this, PrivacyGuardApp.NOTIFICATION_CHANNEL_ID)
             .setContentTitle("Privacy Guard")
             .setContentText(text)
-            .setSmallIcon(android.R.drawable.ic_menu_lock)
+            .setSmallIcon(com.privacyguard.R.drawable.ic_lock)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSilent(true)
+            .build()
+
+        val manager = getSystemService(android.app.NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun updateEnrollmentNotification() {
+        val enrollmentText = "Look at the screen — enrolling your face..."
+        val notification = NotificationCompat.Builder(this, PrivacyGuardApp.NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("Privacy Guard")
+            .setContentText(enrollmentText)
+            .setSmallIcon(com.privacyguard.R.drawable.ic_lock)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setSilent(false)
+            .build()
+
+        val manager = getSystemService(android.app.NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun updateEnrollmentProgress(percent: Int) {
+        val text = "Enrolling your face: $percent% — keep looking at the camera"
+        val notification = NotificationCompat.Builder(this, PrivacyGuardApp.NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("Privacy Guard")
+            .setContentText(text)
+            .setSmallIcon(com.privacyguard.R.drawable.ic_lock)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setSilent(true)

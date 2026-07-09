@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FF1E1E1E"
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginBottom="8dp"
+    android:padding="16dp"
+    android:elevation="2dp">
+
+    <!-- Main card row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- App icon area -->
+        <TextView
+            android:id="@+id/tvAppName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="App Name"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvFaceCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 faces"
+            android:textColor="#FFAAAAAA"
+            android:textSize="14sp"
+            android:background="#FF333333"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Timestamp -->
+    <TextView
+        android:id="@+id/tvTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Jan 01, 2025  12:00:00"
+        android:textColor="#FF888888"
+        android:textSize="13sp"
+        android:layout_marginTop="4dp" />
+
+    <!-- Reason + confidence row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/tvReason"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Multiple faces detected"
+            android:textColor="#FFCC4444"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/tvConfidenceLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="85%"
+            android:textColor="#FFAAAAAA"
+            android:textSize="13sp" />
+
+        <ProgressBar
+            android:id="@+id/confidenceBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="80dp"
+            android:layout_height="6dp"
+            android:layout_marginStart="8dp"
+            android:max="100"
+            android:progress="50" />
+
+    </LinearLayout>
+
+    <!-- Expandable details panel -->
+    <LinearLayout
+        android:id="@+id/detailsPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="12dp"
+        android:paddingTop="12dp"
+        android:background="#FF252525">
+
+        <TextView
+            android:id="@+id/tvStrangerSimilarity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Stranger similarity: 72.3%"
+            android:textColor="#FFBBBBBB"
+            android:textSize="14sp"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/tvDismissedStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status: Active"
+            android:textColor="#FFBBBBBB"
+            android:textSize="14sp"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

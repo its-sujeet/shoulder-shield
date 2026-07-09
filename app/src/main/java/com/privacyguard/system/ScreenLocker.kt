@@ -4,18 +4,15 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.PowerManager
 import com.privacyguard.utils.PreferencesManager
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 
 class ScreenLocker(private val context: Context) {
 
     private val policyManager: DevicePolicyManager? =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as? DevicePolicyManager
     private val componentName = ComponentName(context, DeviceAdminReceiver::class.java)
-    private val powerManager: PowerManager =
-        context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private val preferencesManager = PreferencesManager(context)
 
     companion object {
@@ -63,7 +60,7 @@ class ScreenLocker(private val context: Context) {
      * Lock the device. Returns true if lock was triggered.
      * Never throws — all exceptions caught internally so the coroutine survives.
      *
-     * Priority: device admin → su shell → goToSleep (pre-P) → overlay fallback
+     * Priority: device admin → su shell → false (overlay-only fallback)
      */
     fun lock(): Boolean {
         return try {
@@ -73,17 +70,62 @@ class ScreenLocker(private val context: Context) {
             } else if (runAsRoot("input keyevent 26")) {
                 true
             } else {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                    @Suppress("DEPRECATION")
-                    powerManager.goToSleep(System.currentTimeMillis())
-                    true
-                } else {
-                    false
-                }
+                false // overlay-only fallback
             }
         } catch (_: SecurityException) {
             false
         }
+    }
+
+    /**
+     * Soft lock: first attempts biometric verification. If the user authenticates
+     * successfully, no lock is applied (they're trusted). If biometric fails
+     * (error or too many failures), falls back to [lock].
+     *
+     * @param context A [Context] used for capability checking (biometric check).
+     * @param onSoftUnlock Called if the user authenticates and no lock is needed.
+     * @param onHardLock Called if biometric fails and [lock] is invoked as fallback.
+     */
+    fun softLock(
+        context: Context,
+        onSoftUnlock: () -> Unit = {},
+        onHardLock: () -> Unit = {}
+    ) {
+        if (!BiometricHelper.canAuthenticate(context)) {
+            // No biometric capability — go straight to lock
+            lock()
+            onHardLock()
+            return
+        }
+
+        // The caller is expected to use a FragmentActivity context for the prompt.
+        // If the context is not a FragmentActivity, fall straight to lock.
+        val activity = (context as? androidx.fragment.app.FragmentActivity)
+        if (activity == null) {
+            lock()
+            onHardLock()
+            return
+        }
+
+        BiometricHelper.authenticate(
+            activity = activity,
+            title = "Quick Verification",
+            subtitle = "Verify your identity to avoid full device lock",
+            onSuccess = {
+                // User authenticated — don't lock
+                onSoftUnlock()
+            },
+            onError = { _, err ->
+                // Non-recoverable error — lock as fallback
+                lock()
+                onHardLock()
+            },
+            onFailed = {
+                // Failed attempt — lock as fallback
+                lock()
+                onHardLock()
+            }
+        )
     }
 
     fun isDeviceAdminActive(): Boolean {

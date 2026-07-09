@@ -22,4 +22,20 @@
     <string name="settings_title">Settings</string>
     <string name="timeout_label">Away timeout (seconds)</string>
     <string name="autostart_label">Auto-start on boot</string>
+
+    <!-- Intrusion Log -->
+    <string name="intrusion_log_auth_title">Authenticate to View Log</string>
+    <string name="intrusion_log_auth_subtitle">Unlock with your fingerprint or device credential</string>
+    <string name="intrusion_log_auth_failed">Authentication failed. Cannot display intrusion log.</string>
+    <string name="intrusion_log_auth_required">Please authenticate to view intrusion history</string>
+    <string name="intrusion_log_empty">No intrusion events recorded yet.\nYour privacy shield is working.</string>
+    <string name="intrusion_log_clear_all">Clear All</string>
+
+    <!-- Biometric overlay -->
+    <string name="biometric_overlay_title">Privacy Guard</string>
+    <string name="biometric_overlay_subtitle">Authenticate to dismiss shield</string>
+
+    <!-- Soft lock -->
+    <string name="soft_lock_title">Quick Verification</string>
+    <string name="soft_lock_subtitle">Verify your identity before lock</string>
 </resources>

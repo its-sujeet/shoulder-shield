@@ -22,6 +22,8 @@ class PreferencesManager(private val context: Context) {
     private val isMonitoringKey = booleanPreferencesKey(Constants.PREF_IS_MONITORING)
     private val isEnrolledKey = booleanPreferencesKey(Constants.PREF_IS_ENROLLED)
     private val isRootedKey = booleanPreferencesKey(Constants.PREF_IS_ROOTED)
+    private val ownerEmbeddingKey = stringPreferencesKey(Constants.PREF_OWNER_EMBEDDING)
+    private val setupCompletedKey = booleanPreferencesKey(Constants.PREF_SETUP_COMPLETED)
 
     val awayTimeout: Flow<Int> = context.dataStore.data.map { prefs ->
         prefs[awayTimeoutKey] ?: 5
@@ -83,7 +85,45 @@ class PreferencesManager(private val context: Context) {
         }
     }
 
+    /** Load serialized owner embedding (comma-separated floats). Null if not enrolled. */
+    suspend fun loadOwnerEmbedding(): FloatArray? {
+        val raw = context.dataStore.data.first()[ownerEmbeddingKey] ?: return null
+        return try {
+            raw.split(",").map { it.toFloat() }.toFloatArray()
+        } catch (_: Exception) { null }
+    }
+
+    /** Save serialized owner embedding. */
+    suspend fun saveOwnerEmbedding(embedding: FloatArray) {
+        val raw = embedding.joinToString(",")
+        context.dataStore.edit { prefs ->
+            prefs[ownerEmbeddingKey] = raw
+        }
+    }
+
+    /** Check if owner has been enrolled before. Uses existing isEnrolledKey. */
+    val ownerEnrolled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[ownerEmbeddingKey] != null
+    }
+
+    suspend fun clearEnrollment() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(ownerEmbeddingKey)
+        }
+    }
+
     suspend fun getAwayTimeoutMs(): Long {
         return (context.dataStore.data.first()[awayTimeoutKey] ?: 5) * 1000L
+    }
+
+    /** Has the user completed the setup wizard? */
+    val isSetupCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[setupCompletedKey] ?: false
+    }
+
+    suspend fun setSetupCompleted(completed: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[setupCompletedKey] = completed
+        }
     }
 }
