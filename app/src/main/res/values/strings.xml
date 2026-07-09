@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Privacy Guard</string>
+    <string name="notification_channel_name">Privacy Guard Active</string>
+    <string name="notification_channel_desc">Camera is monitoring for shoulder surfers</string>
+    <string name="notification_text">Privacy shield active — monitoring for strangers</string>
+    <string name="start_monitoring">Start Monitoring</string>
+    <string name="stop_monitoring">Stop Monitoring</string>
+    <string name="permission_camera_title">Camera Access Needed</string>
+    <string name="permission_camera_desc">Privacy Guard needs camera access to detect faces and protect your screen.</string>
+    <string name="permission_overlay_title">Overlay Permission Needed</string>
+    <string name="permission_overlay_desc">Privacy Guard needs overlay permission to blur your screen when a stranger is detected.</string>
+    <string name="stranger_detected">Stranger Detected</string>
+    <string name="screen_shielded">Screen Shielded</string>
+    <string name="shield_removed">Shield Removed</string>
+    <string name="user_looking">You are present</string>
+    <string name="user_away">You are away</string>
+    <string name="face_detected">face detected</string>
+    <string name="faces_detected">faces detected</string>
+    <string name="overlay_warning">The screen will lock in a few seconds if you don\'t return</string>
+    <string name="overlay_stranger">Stranger watching — screen shielded</string>
+    <string name="settings_title">Settings</string>
+    <string name="timeout_label">Away timeout (seconds)</string>
+    <string name="autostart_label">Auto-start on boot</string>
+</resources>

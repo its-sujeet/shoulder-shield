@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF1A1A2E"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@android:drawable/ic_menu_lock"
+            android:layout_marginBottom="24dp"
+            android:alpha="0.8" />
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Privacy Shield: INACTIVE"
+            android:textColor="#FFE94560"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/permissions_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Permissions needed"
+            android:textColor="#FFE94560"
+            android:textSize="14sp"
+            android:layout_marginBottom="40dp" />
+
+        <Button
+            android:id="@+id/btn_toggle"
+            android:layout_width="260dp"
+            android:layout_height="56dp"
+            android:text="@string/start_monitoring"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF16213E"
+            android:elevation="4dp" />
+
+        <Button
+            android:id="@+id/btn_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_title"
+            android:textColor="#FF8899AA"
+            android:background="@null"
+            android:layout_marginTop="16dp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:text="All processing is on-device. No data leaves your phone."
+        android:textColor="#FF556677"
+        android:textSize="12sp"
+        android:layout_marginBottom="24dp" />
+
+</RelativeLayout>
